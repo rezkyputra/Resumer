@@ -3,7 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
+use App\User;
 
 
 class AuthController extends Controller
@@ -15,7 +20,7 @@ class AuthController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login']]);
+        $this->middleware('auth:api', ['except' => ['login', 'register']]);
     }
 
     /**
@@ -25,6 +30,8 @@ class AuthController extends Controller
      */
     public function login()
     {
+
+        // Get the token
         $credentials = request(['email', 'password']);
 
         if (! $token = auth()->attempt($credentials)) {
@@ -32,6 +39,36 @@ class AuthController extends Controller
         }
 
         return $this->respondWithToken($token);
+    }
+
+    public function register(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'username' => 'required|string|max:255|unique:users',
+            'password' => 'required|min:6',
+            'phone' => 'required'
+        ]);
+
+        if($validator->fails()){
+            return response()->json([
+                    "data" => $validator->errors(),
+                    "message" => "Validator error"
+                
+            ], 400);
+        }
+
+        $user = User::create([
+            'name' => $request->get('name'),
+            'email' => $request->get('email'),
+            'username' => $request->get('username'),
+            'password' => Hash::make($request->get('password')),
+            'roleId' => 2,
+            'phone' => $request->get('phone')
+        ]);
+
+        return $this->login();
     }
 
     /**
@@ -76,7 +113,7 @@ class AuthController extends Controller
     protected function respondWithToken($token)
     {
         return response()->json([
-            'access_token' => $token,
+            'token' => $token,
             'token_type' => 'bearer',
             'expires_in' => auth()->factory()->getTTL() * 60
         ]);

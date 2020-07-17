@@ -19,6 +19,20 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 //auth
+Route::group([
+
+    'middleware' => 'api',
+    'prefix' => 'auth'
+
+], function ($router) {
+
+    Route::post('login', 'AuthController@login');
+    Route::post('register', 'AuthController@register');
+    Route::post('logout', 'AuthController@logout');
+    Route::post('refresh', 'AuthController@refresh');
+    Route::post('me', 'AuthController@me');
+
+});
 
 //award
 Route::get('/awards', 'AwardController@index');
@@ -69,19 +83,5 @@ Route::put('/skill/{id}', 'SkillController@update');
 Route::delete('/skill/{id}', 'SkillController@delete');
 
 //user
-Route::get('/users', 'UserController@index');
+Route::get('/users', 'UserController@index')->middleware('auth.jwt');
 
-//auth
-Route::group([
-
-    'middleware' => 'api',
-    'prefix' => 'auth'
-
-], function ($router) {
-
-    Route::post('login', 'AuthController@login');
-    Route::post('logout', 'AuthController@logout');
-    Route::post('refresh', 'AuthController@refresh');
-    Route::post('me', 'AuthController@me');
-
-});
